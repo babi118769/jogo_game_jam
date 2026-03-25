@@ -488,8 +488,8 @@ class TitanTrash {
         ctx.fillStyle = 'white';
         ctx.font = 'bold 24px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText("LIXO TITÃ", 0, -this.radius - 20);
-        ctx.fillText(`CLIQUE: ${this.health}`, 0, 10);
+        ctx.fillText("TITAN TRASH", 0, -this.radius - 20);
+        ctx.fillText(`CLICKS: ${this.health}`, 0, 10);
         ctx.restore();
     }
 }
@@ -619,7 +619,7 @@ function endGame() {
     }
 
     gameOverScreen.classList.remove('hidden');
-    gameOverMessage.textContent = `Você removeu ${scoreInfo.trashRemoved} lixos. O oceano agradece seu esforço!`;
+    gameOverMessage.textContent = `You removed ${scoreInfo.trashRemoved} pieces of trash. The ocean thanks you for your effort!`;
 }
 
 restartBtn.addEventListener('click', initGame);
