@@ -12,11 +12,13 @@ let frames = 0;
 let scoreInfo = {
     trashRemoved: 0,
     fishDied: 0,
-    maxFishDied: 5
+    maxFishDied: 5,
+    highScore: parseInt(localStorage.getItem('oceanCleanupHighScore')) || 0
 };
 
 const trashScoreEl = document.getElementById('trashScore');
 const fishDeathScoreEl = document.getElementById('fishDeathScore');
+const highScoreEl = document.getElementById('highScore');
 const gameOverScreen = document.getElementById('gameOver');
 const gameOverTitle = document.getElementById('gameOverTitle');
 const gameOverMessage = document.getElementById('gameOverMessage');
@@ -350,6 +352,61 @@ class Particle {
     draw() { ctx.fillStyle = this.color; ctx.globalAlpha = Math.max(0, this.life); ctx.beginPath(); ctx.arc(this.x, this.y, 4, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1.0; }
 }
 
+class Seaweed {
+    constructor(x) {
+        this.x = x;
+        this.height = 50 + Math.random() * 100;
+        this.segments = 5;
+        this.swayOffset = Math.random() * Math.PI * 2;
+    }
+    draw() {
+        ctx.strokeStyle = '#2E5900';
+        ctx.lineWidth = 10;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(this.x, height);
+        
+        for (let i = 1; i <= this.segments; i++) {
+            const y = height - (this.height / this.segments) * i;
+            const xOffset = Math.sin(frames * 0.02 + this.swayOffset + i * 0.3) * (i * 5);
+            ctx.lineTo(this.x + xOffset, y);
+        }
+        ctx.stroke();
+    }
+}
+
+class Coral {
+    constructor(x) {
+        this.x = x;
+        this.size = 20 + Math.random() * 30;
+        this.color = `hsl(${Math.random() * 40 + 340}, 70%, 70%)`; // Pinkish/Reddish
+    }
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, height, this.size, Math.PI, 0);
+        ctx.fill();
+        // Dots
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        for(let i=0; i<5; i++) {
+            ctx.beginPath();
+            ctx.arc(this.x + (Math.random()-0.5)*this.size, height - Math.random()*this.size, 3, 0, Math.PI*2);
+            ctx.fill();
+        }
+    }
+}
+
+let backgroundElements = [];
+function initBackground() {
+    backgroundElements = [];
+    for(let i=0; i<width; i += 40) {
+        if(Math.random() < 0.3) backgroundElements.push(new Seaweed(i));
+        if(Math.random() < 0.1) backgroundElements.push(new Coral(i));
+    }
+}
+window.addEventListener('resize', () => { resize(); initBackground(); });
+
+
 function createParticles(x, y, color) { for(let i=0; i<15; i++) particles.push(new Particle(x, y, color)); }
 
 function spawnLogic() {
@@ -375,9 +432,11 @@ function spawnLogic() {
 function initGame() {
     scoreInfo.trashRemoved = 0; scoreInfo.fishDied = 0;
     trashScoreEl.textContent = '0'; fishDeathScoreEl.textContent = '0';
+    highScoreEl.textContent = scoreInfo.highScore;
     fishes = []; trashes = []; particles = []; bubbles = [];
     isGameOver = false; frames = 0;
     gameOverScreen.classList.add('hidden');
+    initBackground();
     for(let i=0; i<6; i++) {
         const f = new Fish(); f.x = Math.random() * width; fishes.push(f);
     }
@@ -411,10 +470,21 @@ function drawBackground() {
     ctx.moveTo(0, waterLine);
     for(let i=0; i<width; i+=20) ctx.lineTo(i, waterLine + Math.sin(frames * 0.05 + i * 0.02) * 5);
     ctx.stroke();
+
+    // Draw Seaweed and Corals
+    backgroundElements.forEach(el => el.draw());
 }
 
 function endGame() {
     isGameOver = true;
+    
+    // Update High Score
+    if (scoreInfo.trashRemoved > scoreInfo.highScore) {
+        scoreInfo.highScore = scoreInfo.trashRemoved;
+        localStorage.setItem('oceanCleanupHighScore', scoreInfo.highScore);
+        highScoreEl.textContent = scoreInfo.highScore;
+    }
+
     gameOverScreen.classList.remove('hidden');
     gameOverMessage.textContent = `Você removeu ${scoreInfo.trashRemoved} lixos. O oceano agradece seu esforço!`;
 }

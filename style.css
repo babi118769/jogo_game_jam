@@ -54,6 +54,15 @@ p {
     color: #f44336;
 }
 
+#highScore {
+    color: #FFD700;
+}
+
+.score-item.highlight {
+    border: 1px solid rgba(255, 215, 0, 0.4);
+}
+
+
 #gameCanvas {
     display: block;
     width: 100vw;
