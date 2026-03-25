@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clean the Ocean</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="ui">
+        <h1>Limpe o Oceano!</h1>
+        <p>Arraste o lixo para FORA da água antes que os peixes comam.</p>
+        <div id="scoreBoard">
+            <span class="score-item">Lixos Removidos: <span id="trashScore">0</span></span>
+            <span class="score-item">Peixes Mortos: <span id="fishDeathScore">0</span>/5</span>
+        </div>
+    </div>
+    <div id="gameOver" class="hidden">
+        <h2 id="gameOverTitle">Fim de Jogo!</h2>
+        <p id="gameOverMessage"></p>
+        <button id="restartBtn">Jogar Novamente</button>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <script src="game.js"></script>
+</body>
+</html>

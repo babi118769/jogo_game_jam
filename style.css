@@ -1,0 +1,108 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    overflow: hidden;
+    font-family: 'Fredoka One', cursive, sans-serif;
+    background-color: #000;
+}
+
+#ui {
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    color: white;
+    z-index: 10;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    pointer-events: none;
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: #4CAF50;
+    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+p {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
+
+#scoreBoard {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 1.5rem;
+}
+
+.score-item {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 5px 15px;
+    border-radius: 20px;
+    display: inline-block;
+    width: fit-content;
+}
+
+#trashScore {
+    color: #4CAF50;
+}
+
+#fishDeathScore {
+    color: #f44336;
+}
+
+#gameCanvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+}
+
+#gameOver {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 20;
+    color: #333;
+}
+
+#gameOver.hidden {
+    display: none;
+}
+
+#gameOver h2 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    color: #f44336;
+}
+
+#gameOver p {
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+    color: #555;
+}
+
+#restartBtn {
+    padding: 15px 30px;
+    font-size: 1.5rem;
+    font-family: inherit;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+#restartBtn:hover {
+    transform: scale(1.05);
+    background-color: #45a049;
+}
