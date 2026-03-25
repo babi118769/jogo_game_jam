@@ -13,8 +13,14 @@ let scoreInfo = {
     trashRemoved: 0,
     fishDied: 0,
     maxFishDied: 5,
-    highScore: parseInt(localStorage.getItem('oceanCleanupHighScore')) || 0
+    highScore: parseInt(localStorage.getItem('oceanCleanupHighScore')) || 0,
+    combo: 0,
+    lastClickTime: 0
 };
+
+let floatingTexts = [];
+let titanTrash = null;
+let trashCounterForBoss = 0;
 
 const trashScoreEl = document.getElementById('trashScore');
 const fishDeathScoreEl = document.getElementById('fishDeathScore');
@@ -61,8 +67,32 @@ canvas.addEventListener('mousedown', (e) => {
     for (let i = trashes.length - 1; i >= 0; i--) {
         const t = trashes[i];
         const dist = Math.hypot(clickX - t.x, clickY - t.y);
-        if (dist <= t.radius + 15) { // Increased hit area for easier clicking
+        
+        // Check if it's the Titan Boss or normal trash
+        const isTitan = t instanceof TitanTrash;
+        const hitRadius = isTitan ? t.radius : t.radius + 15;
+
+        if (dist <= hitRadius) {
+            if (isTitan) {
+                t.takeDamage(clickX, clickY);
+                return;
+            }
+
+            // Normal Trash Combo Logic
+            const now = Date.now();
+            if (now - scoreInfo.lastClickTime < 1000) {
+                scoreInfo.combo++;
+            } else {
+                scoreInfo.combo = 1;
+            }
+            scoreInfo.lastClickTime = now;
+
+            if (scoreInfo.combo > 1) {
+                floatingTexts.push(new FloatingText(clickX, clickY, `COMBO x${scoreInfo.combo}!`, '#FFD700'));
+            }
+
             scoreInfo.trashRemoved++;
+            trashCounterForBoss++;
             trashScoreEl.textContent = scoreInfo.trashRemoved;
             createParticles(t.x, t.y, '#4CAF50');
             trashes.splice(i, 1); 
@@ -140,6 +170,26 @@ class Fish extends Animal {
             if (this.y < waterLine) this.init();
             return;
         }
+
+        // Attraction towards Titan Boss
+        if (titanTrash) {
+            const dx = titanTrash.x - this.x;
+            const dy = titanTrash.y - this.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 500) {
+                this.vx += (dx / dist) * 0.1;
+                this.vy += (dy / dist) * 0.1;
+                
+                // Cap speed
+                const speed = Math.hypot(this.vx, this.vy);
+                const maxSpeed = this.fast ? 6 : 3;
+                if (speed > maxSpeed) {
+                    this.vx = (this.vx / speed) * maxSpeed;
+                    this.vy = (this.vy / speed) * maxSpeed;
+                }
+            }
+        }
+
         this.x += this.vx;
         this.y += this.vy;
         if (this.y < waterLine + this.size || this.y > height - this.size) this.vy *= -1;
@@ -396,6 +446,79 @@ class Coral {
     }
 }
 
+class TitanTrash {
+    constructor() {
+        this.radius = 80;
+        this.x = width / 2;
+        this.y = -100;
+        this.targetY = height / 2;
+        this.health = 10;
+        this.color = '#333';
+        this.shake = 0;
+    }
+    update() {
+        if (this.y < this.targetY) this.y += 2;
+        this.shake *= 0.9;
+    }
+    takeDamage(x, y) {
+        this.health--;
+        this.shake = 10;
+        createParticles(x, y, '#FFF');
+        floatingTexts.push(new FloatingText(x, y, `HP: ${this.health}`, '#F00'));
+        if (this.health <= 0) {
+            scoreInfo.trashRemoved += 10; // Bonus
+            trashScoreEl.textContent = scoreInfo.trashRemoved;
+            createParticles(this.x, this.y, '#FFD700');
+            const idx = trashes.indexOf(this);
+            if(idx !== -1) trashes.splice(idx, 1);
+            titanTrash = null;
+        }
+    }
+    draw() {
+        ctx.save();
+        ctx.translate(this.x + (Math.random()-0.5)*this.shake, this.y + (Math.random()-0.5)*this.shake);
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI*2);
+        ctx.fill();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = '#F00';
+        ctx.stroke();
+        
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText("LIXO TITÃ", 0, -this.radius - 20);
+        ctx.fillText(`CLIQUE: ${this.health}`, 0, 10);
+        ctx.restore();
+    }
+}
+
+class FloatingText {
+    constructor(x, y, text, color) {
+        this.x = x;
+        this.y = y;
+        this.text = text;
+        this.color = color;
+        this.life = 1.0;
+        this.vy = -1;
+    }
+    update() {
+        this.y += this.vy;
+        this.life -= 0.02;
+    }
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.font = 'bold 24px Fredoka One';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'black';
+        ctx.fillText(this.text, this.x, this.y);
+        ctx.restore();
+    }
+}
+
 let backgroundElements = [];
 function initBackground() {
     backgroundElements = [];
@@ -412,6 +535,13 @@ function createParticles(x, y, color) { for(let i=0; i<15; i++) particles.push(n
 function spawnLogic() {
     frames++;
     
+    // Check for Titan Boss spawn
+    if (trashCounterForBoss >= 50 && !titanTrash) {
+        titanTrash = new TitanTrash();
+        trashes.push(titanTrash);
+        trashCounterForBoss = 0;
+    }
+
     // DIFFICULTY SCALING: Increase spawn frequency over time
     // Starts at 1 spawn every 120 frames (~2s), decreases to every 30 frames (~0.5s)
     let currentSpawnRate = Math.max(30, 120 - Math.floor(frames / 600) * 15);
@@ -431,6 +561,9 @@ function spawnLogic() {
 
 function initGame() {
     scoreInfo.trashRemoved = 0; scoreInfo.fishDied = 0;
+    scoreInfo.combo = 0; scoreInfo.lastClickTime = 0;
+    trashCounterForBoss = 0; titanTrash = null;
+    floatingTexts = [];
     trashScoreEl.textContent = '0'; fishDeathScoreEl.textContent = '0';
     highScoreEl.textContent = scoreInfo.highScore;
     fishes = []; trashes = []; particles = []; bubbles = [];
@@ -498,16 +631,18 @@ function gameLoop() {
         trashes.forEach(t => t.update());
         bubbles.forEach((b, i) => { b.update(); if(b.y < waterLine) bubbles.splice(i, 1); });
         particles.forEach((p, i) => { p.update(); if(p.life <= 0) particles.splice(i, 1); });
+        floatingTexts.forEach((ft, i) => { ft.update(); if(ft.life <= 0) floatingTexts.splice(i, 1); });
         for(let i = trashes.length - 1; i >= 0; i--) if (trashes[i].y > height + 50) trashes.splice(i, 1);
     }
 
     drawBackground();
     bubbles.forEach(b => b.draw());
-    let dragged = null;
-    trashes.forEach(t => { if(t.isDragged) dragged = t; else t.draw(); });
+    
+    trashes.forEach(t => t.draw());
     fishes.forEach(f => f.draw());
     particles.forEach(p => p.draw());
-    if(dragged) dragged.draw();
+    floatingTexts.forEach(ft => ft.draw());
+    
     requestAnimationFrame(gameLoop);
 }
 
